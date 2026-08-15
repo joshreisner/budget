@@ -1,6 +1,23 @@
 import { type SubmitEvent, useState } from "react";
 import { type Transaction } from "../types/Transaction";
 
+const toDateInputValue = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const parseLocalDateValue = (value: string) => {
+  const [year, month, day] = value.split("-").map(Number);
+
+  if (!year || !month || !day) {
+    return null;
+  }
+
+  return new Date(year, month - 1, day).getTime();
+};
+
 export const TransactionForm = ({
   showForm,
   setShowForm,
@@ -23,8 +40,8 @@ export const TransactionForm = ({
   // Form state
   const [date, setDate] = useState(
     transaction
-      ? new Date(transaction.date).toISOString().split("T")[0]
-      : new Date().toISOString().split("T")[0],
+      ? toDateInputValue(new Date(transaction.date))
+      : toDateInputValue(new Date()),
   );
   const [amount, setAmount] = useState(
     transaction ? transaction.amount.toString() : "",
@@ -60,8 +77,14 @@ export const TransactionForm = ({
     }
 
     // Prepare transaction data
+    const parsedDate = parseLocalDateValue(date);
+    if (parsedDate === null) {
+      setFormError("Please enter a valid date");
+      return;
+    }
+
     const newTransaction: Transaction = {
-      date: new Date(date).getTime(),
+      date: parsedDate,
       description: description.trim(),
       category,
       amount: amountNum,
@@ -71,7 +94,7 @@ export const TransactionForm = ({
     try {
       await onAddTransaction(newTransaction);
       setShowForm(false);
-      setDate(new Date().toISOString().split("T")[0]);
+      setDate(toDateInputValue(new Date()));
       setAmount("");
       setDescription("");
       setCategory(categories[0]);

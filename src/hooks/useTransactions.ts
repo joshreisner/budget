@@ -23,12 +23,8 @@ export function useTransactions() {
       }
 
       const data = await response.json();
-      setTransactions(
-        data.transactions.map((t: Transaction) => ({
-          ...t,
-          date: new Date(t.date).getTime(),
-        })) || [],
-      );
+      const transactions = (data.transactions || []) as Transaction[];
+      setTransactions(transactions.sort((a, b) => b.date - a.date));
     } catch (err) {
       setError(err instanceof Error ? err : new Error("An error occurred"));
       console.error("Error fetching transactions:", err);

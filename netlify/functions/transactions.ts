@@ -14,6 +14,46 @@ function parseAmount(value: any): number {
   return 0;
 }
 
+function parseLocalDateValue(value: string | number | Date): Date {
+  if (value instanceof Date) {
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  }
+
+  if (typeof value === "number") {
+    return new Date(value);
+  }
+
+  const trimmedValue = value.trim();
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedValue)) {
+    const [year, month, day] = trimmedValue.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmedValue)) {
+    const [month, day, year] = trimmedValue.split("/").map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  const parsedDate = new Date(trimmedValue);
+  if (isNaN(parsedDate.getTime())) {
+    return new Date(NaN);
+  }
+
+  return new Date(
+    parsedDate.getFullYear(),
+    parsedDate.getMonth(),
+    parsedDate.getDate(),
+  );
+}
+
+function formatSheetDate(value: Date): string {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export const handler: Handler = async (event) => {
   const sheetId = process.env.GOOGLE_SHEET_ID;
   const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -50,15 +90,15 @@ export const handler: Handler = async (event) => {
     try {
       const rows = await sheet.getRows();
 
-      const transactions: Transaction[] = rows.map((row) => ({
-        date: new Date(row.get("Date") || "").getTime(),
-        description: row.get("Description") || "",
-        category: row.get("Category") || "",
-        amount: parseAmount(row.get("Amount")),
-        notes: row.get("Notes") || "",
-      }));
-
-      transactions.sort((a, b) => b.date - a.date);
+      const transactions: Transaction[] = rows
+        .map((row) => ({
+          date: parseLocalDateValue(row.get("Date") || "").getTime(),
+          description: row.get("Description") || "",
+          category: row.get("Category") || "",
+          amount: parseAmount(row.get("Amount")),
+          notes: row.get("Notes") || "",
+        }))
+        .sort((a, b) => b.date - a.date);
 
       return {
         statusCode: 200,
@@ -111,31 +151,53 @@ export const handler: Handler = async (event) => {
       }
 
       // format date as M/D/YYYY
-      const dateObj = new Date(newTransaction.date);
+      const dateObj = parseLocalDateValue(newTransaction.date);
       if (isNaN(dateObj.getTime())) {
         return {
           statusCode: 400,
           body: JSON.stringify({ error: "Invalid date format" }),
         };
       }
-      const formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}/${dateObj.getFullYear()}`;
+      const formattedDate = formatSheetDate(dateObj);
 
-      // add the new row
-      await sheet.addRow({
-        Date: formattedDate,
-        Description: newTransaction.description.trim(),
-        Category: newTransaction.category || "",
-        Amount: amount,
-        Notes: newTransaction.notes?.trim() || "",
+      // add the new row to the top of the sheet
+      await sheet.insertDimension(
+        "ROWS",
+        { startIndex: 1, endIndex: 2 },
+        false,
+      );
+
+      await sheet.loadCells({
+        startRowIndex: 1,
+        endRowIndex: 2,
+        startColumnIndex: 0,
+        endColumnIndex: 5,
       });
+
+      const newRowData = [
+        formattedDate,
+        newTransaction.description.trim(),
+        newTransaction.category || "",
+        amount,
+        newTransaction.notes?.trim() || "",
+      ];
+
+      newRowData.forEach((value, columnIndex) => {
+        const cell = sheet.getCell(1, columnIndex);
+        cell.value = value;
+      });
+
+      await sheet.saveUpdatedCells();
+
+      await sheet.loadCells();
 
       // re-sort the sheet after adding the new transaction
       await sheet.sortRange(
         {
           startRowIndex: 1,
-          endRowIndex: sheet.rowCount + 1,
+          endRowIndex: Math.max(sheet.rowCount, 2),
           startColumnIndex: 0,
-          endColumnIndex: 5,
+          endColumnIndex: 4,
         },
         [{ dimensionIndex: 0, sortOrder: "DESCENDING" }],
       );
