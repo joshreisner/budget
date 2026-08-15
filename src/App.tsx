@@ -1,23 +1,21 @@
 import { useState } from "react";
-import { EditForm } from "./components/EditForm";
 import { Fab } from "./components/Fab";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { TransactionForm } from "./components/TransactionForm";
 import { TransactionsList } from "./components/TransactionsList";
 
-function App() {
-  const [showEditForm, setShowEditForm] = useState(false);
+export default function App() {
+  const [showForm, setShowForm] = useState<boolean | number>(false);
   return (
     <ProtectedRoute>
-      {showEditForm ? (
-        <EditForm setShowEditForm={setShowEditForm} />
+      {showForm !== false ? (
+        <TransactionForm showForm={showForm} setShowForm={setShowForm} />
       ) : (
         <>
-          <TransactionsList />
-          <Fab setShowEditForm={setShowEditForm} />
+          <TransactionsList setShowForm={setShowForm} />
+          <Fab setShowForm={setShowForm} />
         </>
       )}
     </ProtectedRoute>
   );
 }
-
-export default App;
