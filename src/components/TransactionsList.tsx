@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { type Transaction } from "../hooks/useTransactions";
+import { type Transaction } from "../types/Transaction";
 import { formatDate } from "../utils/formatDate";
 
 export const TransactionsList = ({
