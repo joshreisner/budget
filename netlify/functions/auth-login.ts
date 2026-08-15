@@ -3,9 +3,7 @@ import { Handler } from "@netlify/functions";
 import { createHmac } from "crypto";
 
 // @ts-ignore
-const APP_PASSWORD = process.env.APP_PASSWORD || "";
-// @ts-ignore
-const devMode = process.env.NODE_ENV === "development" || false;
+const devMode = process.env.NODE_ENV === "development";
 
 // Simple in-memory session store (production: use Redis or a database)
 // For a single user, this is acceptable, but consider using a more persistent store
@@ -23,8 +21,8 @@ export const handler: Handler = async (event) => {
   try {
     const { password } = JSON.parse(event.body || "{}");
 
-    // Validate password
-    if (!password || password !== APP_PASSWORD) {
+    // @ts-ignore
+    if (!password || password !== process.env.APP_PASSWORD) {
       return {
         statusCode: 401,
         body: JSON.stringify({ error: "Invalid credentials" }),
@@ -44,7 +42,8 @@ export const handler: Handler = async (event) => {
     // @ts-ignore
     const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
 
-    const signature = createHmac("sha256", APP_PASSWORD)
+    // @ts-ignore
+    const signature = createHmac("sha256", process.env.APP_PASSWORD)
       .update(`${header}.${body}`)
       .digest("base64url");
 

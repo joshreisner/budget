@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-export const LoginScreen: React.FC = () => {
+export const LoginScreen = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,12 +33,10 @@ export const LoginScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+    <div className="min-h-dvh flex items-center justify-center p-6">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
-            💰
-          </h1>
+          <h1 className="text-4xl font-bold ">💰</h1>
           <h2 className="mt-6 text-3xl font-bold text-gray-900 dark:text-white">
             Budget Tracker
           </h2>

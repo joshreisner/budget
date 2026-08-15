@@ -2,9 +2,6 @@ import { Handler } from "@netlify/functions";
 // @ts-ignore
 import { createHmac } from "crypto";
 
-// @ts-ignore
-const APP_PASSWORD = process.env.APP_PASSWORD || "";
-
 export const handler: Handler = async (event) => {
   // Get token from cookie or Authorization header
   const cookie = event.headers.cookie || "";
@@ -52,7 +49,7 @@ function verifyToken(token: string) {
   if (!header || !body || !sig) return null;
 
   // @ts-ignore
-  const expected = createHmac("sha256", APP_PASSWORD)
+  const expected = createHmac("sha256", process.env.APP_PASSWORD)
     .update(`${header}.${body}`)
     .digest("base64url");
 

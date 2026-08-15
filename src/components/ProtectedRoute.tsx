@@ -1,11 +1,7 @@
-import React, { useEffect, useState } from "react";
+import { type PropsWithChildren, useEffect, useState } from "react";
 import { LoginScreen } from "./LoginScreen";
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-}
-
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+export const ProtectedRoute = ({ children }: PropsWithChildren) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
