@@ -1,15 +1,16 @@
-import { useTransactions } from "../hooks/useTransactions";
+import { type Transaction } from "../hooks/useTransactions";
 
 const categories = ["Groceries", "Travel", "Donations", "Entertainment"];
 
 export const TransactionForm = ({
   showForm,
   setShowForm,
+  transactions,
 }: {
   showForm: boolean | number;
   setShowForm: (show: boolean) => void;
+  transactions: Transaction[];
 }) => {
-  const transactions = useTransactions();
   const transaction =
     typeof showForm === "number" ? transactions[showForm] : null;
   return (
@@ -21,7 +22,7 @@ export const TransactionForm = ({
         <input
           id="date"
           type="date"
-          className="shadow px-3 py-2 border border-gray-500 rounded focus:shadow-outline focus:outline-none w-full appearance-none"
+          className="shadow px-3 py-2 border border-gray-500 rounded w-full appearance-none"
           defaultValue={
             transaction
               ? new Date(transaction.date).toISOString().split("T")[0]
@@ -38,7 +39,7 @@ export const TransactionForm = ({
           id="amount"
           type="number"
           step="0.01"
-          className="shadow px-3 py-2 border border-gray-500 rounded focus:shadow-outline focus:outline-none w-full appearance-none"
+          className="shadow px-3 py-2 border border-gray-500 rounded w-full appearance-none"
           inputMode="decimal"
           defaultValue={transaction ? transaction.amount.toString() : ""}
           required
@@ -51,7 +52,7 @@ export const TransactionForm = ({
         <input
           id="description"
           type="text"
-          className="shadow px-3 py-2 border border-gray-500 rounded focus:shadow-outline focus:outline-none w-full appearance-none"
+          className="shadow px-3 py-2 border border-gray-500 rounded w-full appearance-none"
           defaultValue={transaction ? transaction.description : ""}
         />
       </div>
@@ -61,7 +62,7 @@ export const TransactionForm = ({
         </label>
         <select
           id="category"
-          className="shadow px-3 py-2 border border-gray-500 rounded focus:shadow-outline focus:outline-none w-full appearance-none"
+          className="shadow px-3 py-2 border border-gray-500 rounded w-full appearance-none"
           defaultValue={transaction ? transaction.category : ""}
         >
           {categories.map((category) => (

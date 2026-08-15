@@ -1,48 +1,51 @@
-export const useTransactions = () => {
-  const transactions = [
-    {
-      date: "8/14/2026",
-      description: "T-Mobile",
-      category: "Utilities",
-      amount: 56.56,
-    },
+import { useCallback, useEffect, useState } from "react";
 
-    {
-      date: "8/13/2026",
-      description: "Safeway",
-      category: "Groceries",
-      amount: 15.48,
-    },
-    {
-      date: "8/13/2026",
-      description: "Whole Foods",
-      category: "Groceries",
-      amount: 39.61,
-    },
-    {
-      date: "8/13/2026",
-      description: "Delta",
-      category: "Travel",
-      amount: 833.02,
-    },
-    {
-      date: "8/12/2026",
-      description: "Drinkmate",
-      category: "Groceries",
-      amount: 37.0,
-    },
-    {
-      date: "8/12/2026",
-      description: "AA",
-      category: "Donations",
-      amount: 3.0,
-    },
-    {
-      date: "8/11/2026",
-      description: "Disney+",
-      category: "Entertainment",
-      amount: 17.99,
-    },
-  ];
-  return transactions;
-};
+export interface Transaction {
+  id: string;
+  date: string;
+  description: string;
+  category: string;
+  amount: number;
+  notes: string;
+}
+
+export function useTransactions() {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchTransactions = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/.netlify/functions/transactions", {
+        credentials: "include", // Send cookies if auth is set up
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch transactions");
+      }
+
+      const data = await response.json();
+      setTransactions(data.transactions || []);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error("An error occurred"));
+      console.error("Error fetching transactions:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  return {
+    transactions,
+    isLoading,
+    error,
+    refresh: fetchTransactions,
+  };
+}

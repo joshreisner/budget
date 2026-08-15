@@ -1,6 +1,7 @@
 import { Handler } from "@netlify/functions";
 // @ts-ignore
 import { createHmac } from "crypto";
+import "dotenv/config";
 
 export const handler: Handler = async (event) => {
   // Get token from cookie or Authorization header

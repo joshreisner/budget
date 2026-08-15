@@ -1,15 +1,20 @@
-import { useTransactions } from "../hooks/useTransactions";
+import { useState } from "react";
+import { type Transaction } from "../hooks/useTransactions";
 import { formatDate } from "../utils/formatDate";
+
+const ROW_LIMIT = 10;
 
 export const TransactionsList = ({
   setShowForm,
+  transactions,
 }: {
   setShowForm: (show: number) => void;
+  transactions: Transaction[];
 }) => {
-  const transactions = useTransactions();
+  const [limit, setLimit] = useState(ROW_LIMIT);
   return (
-    <div>
-      {transactions.map((transaction, index) => (
+    <>
+      {transactions.slice(0, limit).map((transaction, index) => (
         <button
           key={index}
           className="flex justify-between p-4 border-gray-200 dark:border-gray-800 border-b w-full"
@@ -27,6 +32,16 @@ export const TransactionsList = ({
           </div>
         </button>
       ))}
-    </div>
+      {limit < transactions.length && (
+        <div className="flex justify-center p-6">
+          <button
+            onClick={() => setLimit(limit + ROW_LIMIT)}
+            className="block bg-blue-400 dark:bg-blue-600 px-4 py-2 rounded w-full text-white"
+          >
+            Load More
+          </button>
+        </div>
+      )}
+    </>
   );
 };

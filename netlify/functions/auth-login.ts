@@ -1,6 +1,7 @@
 import { Handler } from "@netlify/functions";
 // @ts-ignore
 import { createHmac } from "crypto";
+import "dotenv/config";
 
 // @ts-ignore
 const devMode = process.env.NODE_ENV === "development";
