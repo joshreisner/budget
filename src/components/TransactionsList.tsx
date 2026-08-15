@@ -1,8 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { type Transaction } from "../hooks/useTransactions";
 import { formatDate } from "../utils/formatDate";
-
-const ROW_LIMIT = 10;
 
 export const TransactionsList = ({
   setShowForm,
@@ -11,7 +9,27 @@ export const TransactionsList = ({
   setShowForm: (show: number) => void;
   transactions: Transaction[];
 }) => {
-  const [limit, setLimit] = useState(ROW_LIMIT);
+  const [limit, setLimit] = useState(10);
+  const loaderRef = useRef<HTMLDivElement>(null);
+
+  // show more transactions as the user scrolls
+  useEffect(() => {
+    if (!loaderRef.current || !transactions.length) return;
+
+    const observer = new IntersectionObserver(
+      ([{ isIntersecting }]) => {
+        if (isIntersecting && limit < transactions.length) {
+          setLimit((prev) => prev + 10);
+        }
+      },
+      { rootMargin: "250px 0px" },
+    );
+
+    observer.observe(loaderRef.current);
+
+    return () => observer.disconnect();
+  }, [transactions.length]);
+
   return (
     <>
       {transactions.slice(0, limit).map((transaction, index) => (
@@ -32,16 +50,7 @@ export const TransactionsList = ({
           </div>
         </button>
       ))}
-      {limit < transactions.length && (
-        <div className="flex justify-center p-6">
-          <button
-            onClick={() => setLimit(limit + ROW_LIMIT)}
-            className="block bg-blue-400 dark:bg-blue-600 px-4 py-2 rounded w-full text-white"
-          >
-            Load More
-          </button>
-        </div>
-      )}
+      <div ref={loaderRef} />
     </>
   );
 };
