@@ -71,14 +71,19 @@ export function useTransactions() {
   }, []);
 
   const updateTransaction = useCallback(
-    async (updatedTransaction: Transaction, previousTransaction: Transaction) => {
+    async (
+      updatedTransaction: Transaction,
+      previousTransaction: Transaction,
+    ) => {
       setIsAdding(true);
       setError(null);
 
       setTransactions((prev) =>
         prev
           .map((transaction) =>
-            transaction === previousTransaction ? updatedTransaction : transaction,
+            transaction === previousTransaction
+              ? updatedTransaction
+              : transaction,
           )
           .sort((a, b) => b.date - a.date),
       );
@@ -104,7 +109,8 @@ export function useTransactions() {
         const savedTransaction = await response.json();
         return savedTransaction;
       } catch (err) {
-        const error = err instanceof Error ? err : new Error("An error occurred");
+        const error =
+          err instanceof Error ? err : new Error("An error occurred");
         setError(error);
         console.error("Error updating transaction:", err);
         throw error;

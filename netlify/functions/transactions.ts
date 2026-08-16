@@ -136,8 +136,11 @@ export const handler: Handler = async (event) => {
   if (event.httpMethod === "PUT") {
     try {
       const payload = JSON.parse(event.body || "{}");
-      const previousTransaction = payload.previousTransaction as Transaction | undefined;
-      const updatedTransaction = (payload.transaction as Transaction) || payload;
+      const previousTransaction = payload.previousTransaction as
+        | Transaction
+        | undefined;
+      const updatedTransaction =
+        (payload.transaction as Transaction) || payload;
 
       if (!updatedTransaction.description?.trim()) {
         return {
@@ -310,20 +313,50 @@ export const handler: Handler = async (event) => {
 
       await sheet.saveUpdatedCells();
 
-      await sheet.loadCells();
+      const rows = await sheet.getRows();
+      const sortedRows = [...rows].sort((left, right) => {
+        const leftDate = parseLocalDateValue(left.get("Date") || "").getTime();
+        const rightDate = parseLocalDateValue(
+          right.get("Date") || "",
+        ).getTime();
+        return rightDate - leftDate;
+      });
 
-      // re-sort the sheet after adding the new transaction
-      await sheet.sortRange(
-        {
-          startRowIndex: 1,
-          endRowIndex: Math.max(sheet.rowCount, 2),
-          startColumnIndex: 0,
-          endColumnIndex: 4,
-        },
-        [{ dimensionIndex: 0, sortOrder: "DESCENDING" }],
-      );
+      const headerRow = ["Date", "Description", "Category", "Amount", "Notes"];
+      const dataRows = sortedRows.map((row) => {
+        const date = parseLocalDateValue(row.get("Date") || "");
+        return [
+          formatSheetDate(date),
+          row.get("Description") || "",
+          row.get("Category") || "",
+          parseAmount(row.get("Amount")),
+          row.get("Notes") || "",
+        ];
+      });
 
-      await sheet.loadCells();
+      const rowCount = Math.max(sheet.rowCount, dataRows.length + 1);
+      await sheet.loadCells({
+        startRowIndex: 0,
+        endRowIndex: rowCount,
+        startColumnIndex: 0,
+        endColumnIndex: 5,
+      });
+
+      for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+        for (let columnIndex = 0; columnIndex < 5; columnIndex++) {
+          const cell = sheet.getCell(rowIndex, columnIndex);
+
+          if (rowIndex === 0) {
+            cell.value = headerRow[columnIndex];
+            continue;
+          }
+
+          const rowData = dataRows[rowIndex - 1];
+          cell.value = rowData?.[columnIndex] ?? "";
+        }
+      }
+
+      await sheet.saveUpdatedCells();
 
       return {
         statusCode: 201,
