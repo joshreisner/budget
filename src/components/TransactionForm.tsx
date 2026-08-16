@@ -23,12 +23,17 @@ export const TransactionForm = ({
   setShowForm,
   transactions,
   onAddTransaction,
+  onUpdateTransaction,
   isAdding = false,
 }: {
   showForm: boolean | number;
   setShowForm: (show: boolean) => void;
   transactions: Transaction[];
   onAddTransaction: (transaction: Transaction) => Promise<Transaction>;
+  onUpdateTransaction?: (
+    updatedTransaction: Transaction,
+    previousTransaction: Transaction,
+  ) => Promise<Transaction>;
   isAdding?: boolean;
 }) => {
   const categories = [...new Set(transactions.map((t) => t.category))].sort();
@@ -83,7 +88,7 @@ export const TransactionForm = ({
       return;
     }
 
-    const newTransaction: Transaction = {
+    const nextTransaction: Transaction = {
       date: parsedDate,
       description: description.trim(),
       category,
@@ -92,7 +97,12 @@ export const TransactionForm = ({
     };
 
     try {
-      await onAddTransaction(newTransaction);
+      if (isEditing && transaction) {
+        await onUpdateTransaction?.(nextTransaction, transaction);
+      } else {
+        await onAddTransaction(nextTransaction);
+      }
+
       setShowForm(false);
       setDate(toDateInputValue(new Date()));
       setAmount("");

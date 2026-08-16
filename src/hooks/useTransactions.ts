@@ -70,6 +70,51 @@ export function useTransactions() {
     }
   }, []);
 
+  const updateTransaction = useCallback(
+    async (updatedTransaction: Transaction, previousTransaction: Transaction) => {
+      setIsAdding(true);
+      setError(null);
+
+      setTransactions((prev) =>
+        prev
+          .map((transaction) =>
+            transaction === previousTransaction ? updatedTransaction : transaction,
+          )
+          .sort((a, b) => b.date - a.date),
+      );
+
+      try {
+        const response = await fetch("/.netlify/functions/transactions", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            previousTransaction,
+            transaction: updatedTransaction,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to update transaction");
+        }
+
+        const savedTransaction = await response.json();
+        return savedTransaction;
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("An error occurred");
+        setError(error);
+        console.error("Error updating transaction:", err);
+        throw error;
+      } finally {
+        setIsAdding(false);
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     fetchTransactions();
   }, [fetchTransactions]);
@@ -81,5 +126,6 @@ export function useTransactions() {
     isAdding,
     refresh: fetchTransactions,
     addTransaction,
+    updateTransaction,
   };
 }

@@ -7,7 +7,8 @@ import { useTransactions } from "./hooks/useTransactions";
 
 export default function App() {
   const [showForm, setShowForm] = useState<boolean | number>(false);
-  const { transactions, addTransaction, isAdding } = useTransactions();
+  const { transactions, addTransaction, updateTransaction, isAdding } =
+    useTransactions();
   return (
     <ProtectedRoute>
       {showForm !== false ? (
@@ -16,6 +17,7 @@ export default function App() {
           setShowForm={setShowForm}
           transactions={transactions}
           onAddTransaction={addTransaction}
+          onUpdateTransaction={updateTransaction}
           isAdding={isAdding}
         />
       ) : (

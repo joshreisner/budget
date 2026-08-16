@@ -16,7 +16,14 @@ function parseAmount(value: any): number {
 
 function parseLocalDateValue(value: string | number | Date): Date {
   if (value instanceof Date) {
-    return new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate(), 12));
+    return new Date(
+      Date.UTC(
+        value.getUTCFullYear(),
+        value.getUTCMonth(),
+        value.getUTCDate(),
+        12,
+      ),
+    );
   }
 
   if (typeof value === "number") {
@@ -119,6 +126,117 @@ export const handler: Handler = async (event) => {
         statusCode: 500,
         body: JSON.stringify({
           error: "Failed to fetch transactions",
+          details: error instanceof Error ? error.message : "Unknown error",
+        }),
+      };
+    }
+  }
+
+  // update transaction
+  if (event.httpMethod === "PUT") {
+    try {
+      const payload = JSON.parse(event.body || "{}");
+      const previousTransaction = payload.previousTransaction as Transaction | undefined;
+      const updatedTransaction = (payload.transaction as Transaction) || payload;
+
+      if (!updatedTransaction.description?.trim()) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ error: "Description is required" }),
+        };
+      }
+
+      const amount = parseAmount(updatedTransaction.amount);
+      if (isNaN(amount) || amount <= 0) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ error: "Amount must be a positive number" }),
+        };
+      }
+
+      if (!updatedTransaction.date) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ error: "Date is required" }),
+        };
+      }
+
+      const dateObj = parseLocalDateValue(updatedTransaction.date);
+      if (isNaN(dateObj.getTime())) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ error: "Invalid date format" }),
+        };
+      }
+
+      const rows = await sheet.getRows();
+      const targetRow = rows.find((row) => {
+        const rowDate = parseLocalDateValue(row.get("Date") || "").getTime();
+        const rowDescription = (row.get("Description") || "").trim();
+        const rowCategory = (row.get("Category") || "").trim();
+        const rowAmount = parseAmount(row.get("Amount"));
+        const rowNotes = (row.get("Notes") || "").trim();
+
+        if (previousTransaction) {
+          return (
+            rowDate === previousTransaction.date &&
+            rowDescription === previousTransaction.description &&
+            rowCategory === previousTransaction.category &&
+            rowAmount === previousTransaction.amount &&
+            rowNotes === previousTransaction.notes
+          );
+        }
+
+        return (
+          rowDate === updatedTransaction.date &&
+          rowDescription === updatedTransaction.description &&
+          rowCategory === updatedTransaction.category &&
+          rowAmount === updatedTransaction.amount &&
+          rowNotes === updatedTransaction.notes
+        );
+      });
+
+      if (!targetRow) {
+        return {
+          statusCode: 404,
+          body: JSON.stringify({ error: "Transaction not found" }),
+        };
+      }
+
+      const formattedDate = formatSheetDate(dateObj);
+      targetRow.set("Date", formattedDate);
+      targetRow.set("Description", updatedTransaction.description.trim());
+      targetRow.set("Category", updatedTransaction.category || "");
+      targetRow.set("Amount", amount);
+      targetRow.set("Notes", updatedTransaction.notes?.trim() || "");
+      await targetRow.save();
+
+      await sheet.loadCells();
+      await sheet.sortRange(
+        {
+          startRowIndex: 1,
+          endRowIndex: Math.max(sheet.rowCount, 2),
+          startColumnIndex: 0,
+          endColumnIndex: 4,
+        },
+        [{ dimensionIndex: 0, sortOrder: "DESCENDING" }],
+      );
+
+      return {
+        statusCode: 200,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...updatedTransaction,
+          date: updatedTransaction.date,
+          amount,
+        }),
+      };
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: "Failed to update transaction",
           details: error instanceof Error ? error.message : "Unknown error",
         }),
       };
