@@ -35,7 +35,7 @@ export const TransactionsList = ({
       {transactions.slice(0, limit).map((transaction, index) => (
         <button
           key={index}
-          className="flex justify-between p-4 border-gray-200 dark:border-gray-800 border-b w-full"
+          className="flex justify-between px-5 py-4 border-gray-200 dark:border-gray-800 border-b w-full"
           onClick={() => setShowForm(index)}
         >
           <div className="text-left">

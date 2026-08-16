@@ -33,7 +33,7 @@ export const LoginScreen = () => {
   };
 
   return (
-    <div className="flex justify-center items-center p-6 min-h-dvh">
+    <div className="flex justify-center items-center p-5 min-h-dvh">
       <div className="space-y-8 w-full max-w-md">
         <div className="text-center">
           <h1 className="font-bold text-4xl">💰</h1>
@@ -71,7 +71,7 @@ export const LoginScreen = () => {
               disabled={loading}
               className="group relative flex justify-center bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-4 py-2 border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 w-full font-medium text-white text-sm transition-colors disabled:cursor-not-allowed"
             >
-              {loading ? "Logging in..." : "Sign In"}
+              {loading ? "Logging in…" : "Sign In"}
             </button>
           </div>
         </form>
