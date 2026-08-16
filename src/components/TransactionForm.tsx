@@ -15,7 +15,7 @@ const parseLocalDateValue = (value: string) => {
     return null;
   }
 
-  return new Date(year, month - 1, day).getTime();
+  return Date.UTC(year, month - 1, day, 12, 0, 0, 0);
 };
 
 export const TransactionForm = ({

@@ -16,7 +16,7 @@ function parseAmount(value: any): number {
 
 function parseLocalDateValue(value: string | number | Date): Date {
   if (value instanceof Date) {
-    return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+    return new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate(), 12));
   }
 
   if (typeof value === "number") {
@@ -27,12 +27,12 @@ function parseLocalDateValue(value: string | number | Date): Date {
 
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedValue)) {
     const [year, month, day] = trimmedValue.split("-").map(Number);
-    return new Date(year, month - 1, day);
+    return new Date(Date.UTC(year, month - 1, day, 12));
   }
 
   if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmedValue)) {
     const [month, day, year] = trimmedValue.split("/").map(Number);
-    return new Date(year, month - 1, day);
+    return new Date(Date.UTC(year, month - 1, day, 12));
   }
 
   const parsedDate = new Date(trimmedValue);
@@ -41,9 +41,12 @@ function parseLocalDateValue(value: string | number | Date): Date {
   }
 
   return new Date(
-    parsedDate.getFullYear(),
-    parsedDate.getMonth(),
-    parsedDate.getDate(),
+    Date.UTC(
+      parsedDate.getUTCFullYear(),
+      parsedDate.getUTCMonth(),
+      parsedDate.getUTCDate(),
+      12,
+    ),
   );
 }
 
