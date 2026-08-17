@@ -14,6 +14,10 @@ function parseAmount(value: any): number {
   return 0;
 }
 
+function stripLeadingQuoteChars(value: string): string {
+  return value.trim().replace(/^['"]+/, "");
+}
+
 function parseLocalDateValue(value: string | number | Date): Date {
   if (value instanceof Date) {
     return new Date(
@@ -30,7 +34,7 @@ function parseLocalDateValue(value: string | number | Date): Date {
     return new Date(value);
   }
 
-  const trimmedValue = value.trim();
+  const trimmedValue = stripLeadingQuoteChars(value);
 
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedValue)) {
     const [year, month, day] = trimmedValue.split("-").map(Number);
@@ -61,7 +65,7 @@ function formatSheetDate(value: Date): string {
   const year = value.getFullYear();
   const month = String(value.getMonth() + 1).padStart(2, "0");
   const day = String(value.getDate()).padStart(2, "0");
-  return `'${year}-${month}-${day}`;
+  return `${year}-${month}-${day}`;
 }
 
 export const handler: Handler = async (event) => {
@@ -273,7 +277,7 @@ export const handler: Handler = async (event) => {
         };
       }
 
-      // format date as M/D/YYYY
+      // format date
       const dateObj = parseLocalDateValue(newTransaction.date);
       if (isNaN(dateObj.getTime())) {
         return {
@@ -283,79 +287,24 @@ export const handler: Handler = async (event) => {
       }
       const formattedDate = formatSheetDate(dateObj);
 
-      // add the new row to the top of the sheet
-      await sheet.insertDimension(
-        "ROWS",
-        { startIndex: 1, endIndex: 2 },
-        false,
+      // add the new row using the row API
+      const newRow = await sheet.addRow({
+        Date: formattedDate,
+        Description: newTransaction.description.trim(),
+        Category: newTransaction.category || "",
+        Amount: amount,
+        Notes: newTransaction.notes?.trim() || "",
+      });
+
+      await sheet.sortRange(
+        {
+          startRowIndex: 1,
+          endRowIndex: Math.max(sheet.rowCount, 2),
+          startColumnIndex: 0,
+          endColumnIndex: 5,
+        },
+        [{ dimensionIndex: 0, sortOrder: "DESCENDING" }],
       );
-
-      await sheet.loadCells({
-        startRowIndex: 1,
-        endRowIndex: 2,
-        startColumnIndex: 0,
-        endColumnIndex: 5,
-      });
-
-      const newRowData = [
-        formattedDate,
-        newTransaction.description.trim(),
-        newTransaction.category || "",
-        amount,
-        newTransaction.notes?.trim() || "",
-      ];
-
-      newRowData.forEach((value, columnIndex) => {
-        const cell = sheet.getCell(1, columnIndex);
-        cell.value = value;
-      });
-
-      await sheet.saveUpdatedCells();
-
-      const rows = await sheet.getRows();
-      const sortedRows = [...rows].sort((left, right) => {
-        const leftDate = parseLocalDateValue(left.get("Date") || "").getTime();
-        const rightDate = parseLocalDateValue(
-          right.get("Date") || "",
-        ).getTime();
-        return rightDate - leftDate;
-      });
-
-      const headerRow = ["Date", "Description", "Category", "Amount", "Notes"];
-      const dataRows = sortedRows.map((row) => {
-        const date = parseLocalDateValue(row.get("Date") || "");
-        return [
-          formatSheetDate(date),
-          row.get("Description") || "",
-          row.get("Category") || "",
-          parseAmount(row.get("Amount")),
-          row.get("Notes") || "",
-        ];
-      });
-
-      const rowCount = Math.max(sheet.rowCount, dataRows.length + 1);
-      await sheet.loadCells({
-        startRowIndex: 0,
-        endRowIndex: rowCount,
-        startColumnIndex: 0,
-        endColumnIndex: 5,
-      });
-
-      for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-        for (let columnIndex = 0; columnIndex < 5; columnIndex++) {
-          const cell = sheet.getCell(rowIndex, columnIndex);
-
-          if (rowIndex === 0) {
-            cell.value = headerRow[columnIndex];
-            continue;
-          }
-
-          const rowData = dataRows[rowIndex - 1];
-          cell.value = rowData?.[columnIndex] ?? "";
-        }
-      }
-
-      await sheet.saveUpdatedCells();
 
       return {
         statusCode: 201,
