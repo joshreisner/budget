@@ -227,13 +227,11 @@ export const TransactionForm = ({
         />
       </div>
 
-      <div
-        className={`gap-4 grid my-7 ${isEditing ? "grid-cols-4" : "grid-cols-3"}`}
-      >
+      <div className="gap-8 grid grid-cols-2 my-7">
         <button
           type="submit"
           disabled={isAdding}
-          className="col-span-2 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50 px-4 py-2 rounded font-bold text-white transition-colors disabled:cursor-not-allowed"
+          className="col-span-2 bg-blue-500 dark:bg-blue-600 disabled:opacity-50 px-4 py-2 rounded font-bold text-white transition-colors disabled:cursor-not-allowed"
         >
           {isAdding ? "Saving…" : isEditing ? "Update" : "Save"}
         </button>
@@ -242,11 +240,12 @@ export const TransactionForm = ({
             type="button"
             disabled={isDeleting}
             onClick={handleDelete}
-            className={
-              isDeleteConfirming
-                ? "bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 px-4 py-2 rounded font-bold text-white transition-colors"
-                : "hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded transition-colors"
-            }
+            className={`col-span-1 px-4 py-2 rounded 
+              ${
+                isDeleteConfirming
+                  ? "bg-red-500  dark:bg-red-600  font-bold text-white"
+                  : "border   border-gray-300 dark:border-gray-600"
+              }`}
           >
             {isDeleting
               ? "Deleting…"
@@ -257,7 +256,7 @@ export const TransactionForm = ({
         )}
         <button
           type="button"
-          className="hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded transition-colors"
+          className={`${isEditing ? "col-span-1" : "col-span-2"}  px-4 py-2 border border-gray-300 dark:border-gray-600 rounded w-full transition-colors`}
           onClick={() => {
             setShowForm(false);
             setIsDeleteConfirming(false);
