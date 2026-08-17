@@ -330,6 +330,61 @@ export const handler: Handler = async (event) => {
     }
   }
 
+  // delete transaction
+  if (event.httpMethod === "DELETE") {
+    try {
+      const transactionToDelete = JSON.parse(event.body || "{}") as Transaction;
+
+      if (!transactionToDelete.description?.trim()) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ error: "Invalid transaction to delete" }),
+        };
+      }
+
+      const rows = await sheet.getRows();
+      const targetRow = rows.find((row) => {
+        const rowDate = parseLocalDateValue(row.get("Date") || "").getTime();
+        const rowDescription = (row.get("Description") || "").trim();
+        const rowCategory = (row.get("Category") || "").trim();
+        const rowAmount = parseAmount(row.get("Amount"));
+        const rowNotes = (row.get("Notes") || "").trim();
+
+        return (
+          rowDate === transactionToDelete.date &&
+          rowDescription === transactionToDelete.description &&
+          rowCategory === transactionToDelete.category &&
+          rowAmount === transactionToDelete.amount &&
+          rowNotes === transactionToDelete.notes
+        );
+      });
+
+      if (!targetRow) {
+        return {
+          statusCode: 404,
+          body: JSON.stringify({ error: "Transaction not found" }),
+        };
+      }
+
+      await targetRow.delete();
+
+      return {
+        statusCode: 200,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "Transaction deleted successfully" }),
+      };
+    } catch (error) {
+      console.error("Error deleting transaction:", error);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: "Failed to delete transaction",
+          details: error instanceof Error ? error.message : "Unknown error",
+        }),
+      };
+    }
+  }
+
   return {
     statusCode: 405,
     body: JSON.stringify({ error: "Method not allowed" }),

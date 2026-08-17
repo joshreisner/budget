@@ -7,6 +7,7 @@ export function useTransactions() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchTransactions = useCallback(async () => {
     setIsLoading(true);
@@ -121,6 +122,41 @@ export function useTransactions() {
     [],
   );
 
+  const deleteTransaction = useCallback(async (transaction: Transaction) => {
+    setIsDeleting(true);
+    setError(null);
+
+    // Update UI immediately
+    setTransactions((prev) => prev.filter((t) => t !== transaction));
+
+    try {
+      const response = await fetch("/.netlify/functions/transactions", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(transaction),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete transaction");
+      }
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error("An error occurred");
+      setError(error);
+      console.error("Error deleting transaction:", err);
+      // Revert UI change on error
+      setTransactions((prev) =>
+        [...prev, transaction].sort((a, b) => b.date - a.date),
+      );
+      throw error;
+    } finally {
+      setIsDeleting(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchTransactions();
   }, [fetchTransactions]);
@@ -130,8 +166,10 @@ export function useTransactions() {
     isLoading,
     error,
     isAdding,
+    isDeleting,
     refresh: fetchTransactions,
     addTransaction,
     updateTransaction,
+    deleteTransaction,
   };
 }

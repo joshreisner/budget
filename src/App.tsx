@@ -10,7 +10,9 @@ export default function App() {
   const [showForm, setShowForm] = useState<boolean | number>(false);
   const {
     addTransaction,
+    deleteTransaction,
     isAdding,
+    isDeleting,
     isLoading,
     transactions,
     updateTransaction,
@@ -26,7 +28,9 @@ export default function App() {
           transactions={transactions}
           onAddTransaction={addTransaction}
           onUpdateTransaction={updateTransaction}
+          onDeleteTransaction={deleteTransaction}
           isAdding={isAdding}
+          isDeleting={isDeleting}
         />
       ) : (
         <>

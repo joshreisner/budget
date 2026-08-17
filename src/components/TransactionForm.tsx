@@ -24,7 +24,9 @@ export const TransactionForm = ({
   transactions,
   onAddTransaction,
   onUpdateTransaction,
+  onDeleteTransaction,
   isAdding = false,
+  isDeleting = false,
 }: {
   showForm: boolean | number;
   setShowForm: (show: boolean) => void;
@@ -34,7 +36,9 @@ export const TransactionForm = ({
     updatedTransaction: Transaction,
     previousTransaction: Transaction,
   ) => Promise<Transaction>;
+  onDeleteTransaction?: (transaction: Transaction) => Promise<void>;
   isAdding?: boolean;
+  isDeleting?: boolean;
 }) => {
   const categories = [...new Set(transactions.map((t) => t.category))].sort();
 
@@ -59,6 +63,7 @@ export const TransactionForm = ({
   );
   const [notes, setNotes] = useState(transaction ? transaction.notes : "");
   const [formError, setFormError] = useState<string | null>(null);
+  const [isDeleteConfirming, setIsDeleteConfirming] = useState(false);
 
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -113,6 +118,26 @@ export const TransactionForm = ({
       setFormError(
         err instanceof Error ? err.message : "Failed to save transaction",
       );
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!isDeleteConfirming) {
+      setIsDeleteConfirming(true);
+      return;
+    }
+
+    if (onDeleteTransaction && transaction) {
+      try {
+        await onDeleteTransaction(transaction);
+        setShowForm(false);
+        setIsDeleteConfirming(false);
+      } catch (err) {
+        setFormError(
+          err instanceof Error ? err.message : "Failed to delete transaction",
+        );
+        setIsDeleteConfirming(false);
+      }
     }
   };
 
@@ -202,7 +227,9 @@ export const TransactionForm = ({
         />
       </div>
 
-      <div className="gap-4 grid grid-cols-3 my-7">
+      <div
+        className={`gap-4 grid my-7 ${isEditing ? "grid-cols-4" : "grid-cols-3"}`}
+      >
         <button
           type="submit"
           disabled={isAdding}
@@ -210,10 +237,31 @@ export const TransactionForm = ({
         >
           {isAdding ? "Saving…" : isEditing ? "Update" : "Save"}
         </button>
+        {isEditing && (
+          <button
+            type="button"
+            disabled={isDeleting}
+            onClick={handleDelete}
+            className={
+              isDeleteConfirming
+                ? "bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 px-4 py-2 rounded font-bold text-white transition-colors"
+                : "hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded transition-colors"
+            }
+          >
+            {isDeleting
+              ? "Deleting…"
+              : isDeleteConfirming
+                ? "Are you sure?"
+                : "Delete"}
+          </button>
+        )}
         <button
           type="button"
           className="hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded transition-colors"
-          onClick={() => setShowForm(false)}
+          onClick={() => {
+            setShowForm(false);
+            setIsDeleteConfirming(false);
+          }}
         >
           Cancel
         </button>
