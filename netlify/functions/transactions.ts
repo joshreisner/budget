@@ -61,7 +61,7 @@ function formatSheetDate(value: Date): string {
   const year = value.getFullYear();
   const month = String(value.getMonth() + 1).padStart(2, "0");
   const day = String(value.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return `'${year}-${month}-${day}`;
 }
 
 export const handler: Handler = async (event) => {
@@ -220,7 +220,7 @@ export const handler: Handler = async (event) => {
           startRowIndex: 1,
           endRowIndex: Math.max(sheet.rowCount, 2),
           startColumnIndex: 0,
-          endColumnIndex: 4,
+          endColumnIndex: 5,
         },
         [{ dimensionIndex: 0, sortOrder: "DESCENDING" }],
       );
@@ -230,7 +230,6 @@ export const handler: Handler = async (event) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...updatedTransaction,
-          date: updatedTransaction.date,
           amount,
         }),
       };

@@ -1,5 +1,6 @@
 import { type PropsWithChildren, useEffect, useState } from "react";
 import { LoginScreen } from "./LoginScreen";
+import { Spinner } from "./Spinner";
 
 export const ProtectedRoute = ({ children }: PropsWithChildren) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -29,7 +30,7 @@ export const ProtectedRoute = ({ children }: PropsWithChildren) => {
   }, []);
 
   if (loading) {
-    return <></>;
+    return <Spinner />;
   }
 
   if (!isAuthenticated) {
