@@ -41,6 +41,9 @@ export const TransactionForm = ({
   isDeleting?: boolean;
 }) => {
   const categories = [...new Set(transactions.map((t) => t.category))].sort();
+  const descriptions = [
+    ...new Set(transactions.map((t) => t.description).filter(Boolean)),
+  ].sort((a, b) => a.localeCompare(b));
 
   const transaction =
     typeof showForm === "number" ? transactions[showForm] : null;
@@ -170,12 +173,18 @@ export const TransactionForm = ({
         <input
           id="description"
           type="text"
+          list="description-options"
           className="dark:bg-gray-700 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded w-full appearance-none"
           placeholder="Payee, store, etc…"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           required
         />
+        <datalist id="description-options">
+          {descriptions.map((description) => (
+            <option key={description} value={description} />
+          ))}
+        </datalist>
       </div>
 
       <div className="mb-4">
