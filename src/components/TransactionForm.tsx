@@ -44,6 +44,27 @@ export const TransactionForm = ({
   const descriptions = [
     ...new Set(transactions.map((t) => t.description).filter(Boolean)),
   ].sort((a, b) => a.localeCompare(b));
+  const categoryByDescription = new Map(
+    descriptions.map((description) => {
+      const categoryCounts = new Map<string, number>();
+
+      transactions
+        .filter((transaction) => transaction.description === description)
+        .forEach((transaction) => {
+          categoryCounts.set(
+            transaction.category,
+            (categoryCounts.get(transaction.category) ?? 0) + 1,
+          );
+        });
+
+      const mostCommonCategory = [...categoryCounts.entries()].sort(
+        ([categoryA, countA], [categoryB, countB]) =>
+          countB - countA || categoryA.localeCompare(categoryB),
+      )[0]?.[0];
+
+      return [description, mostCommonCategory];
+    }),
+  );
 
   const transaction =
     typeof showForm === "number" ? transactions[showForm] : null;
@@ -177,7 +198,18 @@ export const TransactionForm = ({
           className="dark:bg-gray-700 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded w-full appearance-none"
           placeholder="Payee, store, etc…"
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => {
+            const nextDescription = e.target.value;
+            setDescription(nextDescription);
+
+            if (!isEditing) {
+              const suggestedCategory =
+                categoryByDescription.get(nextDescription);
+              if (suggestedCategory) {
+                setCategory(suggestedCategory);
+              }
+            }
+          }}
           required
         />
         <datalist id="description-options">
