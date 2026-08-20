@@ -287,7 +287,7 @@ export const handler: Handler = async (event) => {
       }
       const formattedDate = formatSheetDate(dateObj);
 
-      // add the new row using the row API
+      // add the row, then move it below the header so it will sort at the top of its day
       const newRow = await sheet.addRow({
         Date: formattedDate,
         Description: newTransaction.description.trim(),
@@ -295,6 +295,11 @@ export const handler: Handler = async (event) => {
         Amount: amount,
         Notes: newTransaction.notes?.trim() || "",
       });
+      await sheet.moveDimension(
+        "ROWS",
+        { startIndex: newRow.rowNumber - 1, endIndex: newRow.rowNumber },
+        1,
+      );
 
       await sheet.sortRange(
         {
