@@ -3,6 +3,7 @@ import "dotenv/config";
 import { JWT } from "google-auth-library";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import { type Transaction } from "../../src/types/Transaction";
+import { getAuthenticatedUser } from "./auth";
 
 function parseAmount(value: any): number {
   if (typeof value === "number") return value;
@@ -69,6 +70,13 @@ function formatSheetDate(value: Date): string {
 }
 
 export const handler: Handler = async (event) => {
+  if (!getAuthenticatedUser(event)) {
+    return {
+      statusCode: 401,
+      body: JSON.stringify({ error: "Authentication required" }),
+    };
+  }
+
   const sheetId = process.env.GOOGLE_SHEET_ID;
   const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const privateKey = process.env.GOOGLE_PRIVATE_KEY;
